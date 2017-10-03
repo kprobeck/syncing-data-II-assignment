@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://npmcdn.com/babel-core@5.8.38/browser.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/babel" >
+        "use strict";
+        let socket;
+        let canvas;
+        let ctx;
+        let sendBufferCanvas;
+        let sendBufferCtx;
+        
+        const init = () => {
+          
+          canvas = document.querySelector("#mainCanvas");
+		  ctx = canvas.getContext('2d');
+          
+          socket = io.connect();
+          
+          setupSocket();
+          
+          setInterval( () => {
+            sendBufferCtx.fillRect(0,0, 50, 50); // draw to hidden canvas
+          
+            const imgDat = sendBufferCanvas.toDataURL(); // pixel data from canvas
+          
+            let randX = Math.floor(Math.random() * 650);
+            let randY = Math.floor(Math.random() * 450);
+            
+            const data = {
+              x: randX,
+              y: randY,
+              height: 50,
+              width: 50,
+              imgData: imgDat,
+            };
+          
+            socket.emit('draw', data);
+            
+          }, 3000);
+        };
+        
+        window.onload = init;
+        const setupSocket = () => {
+          socket.emit('join');
+          
+          sendBufferCanvas = document.createElement("canvas");
+          sendBufferCanvas.height = 30;
+          sendBufferCanvas.width = 30;
+          sendBufferCtx = sendBufferCanvas.getContext("2d");
+          
+          ctx.fillStyle = 'red';
+          ctx.fillRect(100, 100, 100, 100); // draw on screen
+          
+          
+          socket.on('drawToCanvas', (data) => {
+            let image = new Image();
+            
+            image.onload = () => {
+              ctx.save();
+              ctx.globalCompositeOperation = "source-over"; // default
+              ctx.drawImage(image, data.x, data.y, data.width, data.height);
+              ctx.restore();
+            };
+            
+            image.src = data.imgData;
+          });
+          
+        };
+    
+    </script>
+</head>
+<body>
+  <canvas id="mainCanvas" width="700" height="500">
+	Cannot create canvas element...
+	</canvas>
+</body>
+</html>
