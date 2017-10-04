@@ -32,7 +32,7 @@ const onMsg = (sock) => {
 
   // create an image from data received
   socket.on('draw', (data) => {
-    io.sockets.in('room1').emit('drawToCanvas', data);
+    socket.broadcast.emit('drawToCanvas', data);
   });
 };
 
