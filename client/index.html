@@ -6,6 +6,10 @@
         canvas {
             border: 2px solid black;
         }
+      
+      #promptHeader {
+        color: red;
+      }
     </style>
   
     <script src="https://npmcdn.com/babel-core@5.8.38/browser.min.js"></script>
@@ -30,6 +34,8 @@
 
         let brushSelect;
         let brushType;
+
+        let clearButton;
         
         // init function
         const init = () => {
@@ -39,6 +45,7 @@
           colorSelect = document.querySelector("#colorSelect");
           brushSizeSelect = document.querySelector("#sizeSelect");
           brushSelect = document.querySelector("#brushSelect");
+          clearButton = document.querySelector("#clearButton");
           
           ctx.fillStyle = 'black';
           ctx.strokeStyle = 'black';
@@ -76,7 +83,7 @@
             }
           }, false);
           
-          // add listeners on the windoe to see if the mouse is being pressed down
+          // add listeners on the window to see if the mouse is being pressed down
           canvas.addEventListener('mousedown', () => {
             mousedown = true;
           });
@@ -85,6 +92,7 @@
             mousedown = false;
           });
           
+          // events for interacting with page
           colorSelect.onchange = (e) => {
             ctx.fillStyle = e.target.value;
             sendBufferCtx.fillStyle = e.target.value;
@@ -101,9 +109,22 @@
             brushType = e.target.value;
           };
           
+          clearButton.onclick = (e) => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            sendBufferCtx.clearRect(0, 0, canvas.width, canvas.height);
+            socket.emit('clearCanvas');
+          };
+          
+          // hook up sockets, then get first prompt
           socket = io.connect();
           
           setupSocket();
+          
+          socket.emit('getPrompt');
+          
+          setInterval( () => {
+            socket.emit('getPrompt');
+          }, 20000);
         };
         
         window.onload = init;
@@ -129,10 +150,8 @@
                 sendBufferCtx.closePath();
                 sendBufferCtx.stroke();
               default:
-                sendBufferCtx.fillRect(mouseX, mouseY, brushSize, brushSize);;
+                sendBufferCtx.fillRect(mouseX, mouseY, brushSize, brushSize);
             }
-          
-            sendBufferCtx.fillRect(mouseX, mouseY, brushSize, brushSize); // draw to hidden canvas
           
             const imgDat = sendBufferCanvas.toDataURL(); // pixel data from canvas
             
@@ -179,14 +198,25 @@
             image.src = data.imgData;
           });
           
+          socket.on('newPrompt', (data) => {
+            document.querySelector("#promptHeader").innerHTML = `Try drawing: ${data.prompt}`;
+          });
+          
+          socket.on('eraseCanvas', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            sendBufferCtx.clearRect(0, 0, canvas.width, canvas.height);
+          });
+          
         };
     
     </script>
 </head>
 <body>
+  <h1>Draw Together!</h1>
   <canvas id="mainCanvas" width="700" height="500">
 	Cannot create canvas element...
 	</canvas>
+  <h2 id="promptHeader">Try drawing:</h2>
   <h3>Color:</h3>
   <select id="colorSelect">
     <option value="black">Black</option>
@@ -212,5 +242,8 @@
     <option value='circle'>Circle</option>
     <option value='line'>Line</option>
   </select>
+  
+  <h3>Clear Drawing (WARNING, CLEARS FOR ALL USERS):</h3>
+  <button id="clearButton">Clear</button>
 </body>
 </html>

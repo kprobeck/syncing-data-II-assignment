@@ -6,8 +6,14 @@ const port = process.env.PORT || process.env.NODE_PORT || 3000;
 
 const index = fs.readFileSync(`${__dirname}/../client/index.html`);
 
+const prompts = ['An Apple', 'A Monkey', 'A Car', 'Nuclear Physics', 'A Plane', 'A Horse', 'A Goose', 'A Computer',
+  'A Bottle of Root Beer', 'Waves', 'Pirates', 'A Superhero', 'Lightbulbs', 'A one-eyed Monster',
+  'A Corkscrew', 'An Xbox Controller', 'Sunglasses', 'Rats', 'Cheese', 'Spooky Scary Skeletons', 'A Printer', 'A Pencil',
+  'A Server', 'A Waiter', 'Movies Tickets', 'Popcorn', 'Hot Dogs', 'A Dance Performance', 'The entire Map of Skyrim', 'Old-Timey Cartoons',
+  'Memes', 'A Chicken'];
+
 const onRequest = (req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/html ' });
+  res.writeHead(200, { 'Content-Type': 'text/html' });
   res.write(index);
   res.end();
 };
@@ -33,6 +39,22 @@ const onMsg = (sock) => {
   // create an image from data received
   socket.on('draw', (data) => {
     socket.broadcast.emit('drawToCanvas', data);
+  });
+  
+  // erase the canvas
+  socket.on('clearCanvas', (data) => {
+    socket.broadcast.emit('eraseCanvas');
+  });
+
+  // give a random prompt from the prompt list
+  socket.on('getPrompt', () => {
+    const randomPrompt = Math.floor(Math.random() * prompts.length);
+
+    const data = {
+      prompt: prompts[randomPrompt],
+    };
+
+    socket.emit('newPrompt', data);
   });
 };
 
