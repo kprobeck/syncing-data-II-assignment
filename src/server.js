@@ -42,7 +42,7 @@ const onMsg = (sock) => {
   });
   
   // erase the canvas
-  socket.on('clearCanvas', (data) => {
+  socket.on('clearCanvas', () => {
     socket.broadcast.emit('eraseCanvas');
   });
 
